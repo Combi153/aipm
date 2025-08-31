@@ -1,0 +1,8 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+- 테스트 코드는 given, when, then 패턴을 따른다.
+  - 특정 단계에 대해 작성할 코드가 없다면 given & when, when & then 으로 주석을 단다.

@@ -58,10 +58,6 @@ $ cd aipm
 # 의존성 설치
 $ npm install
 
-# 환경 변수 설정
-$ cp .env.example .env
-# .env 파일에 API 키 및 설정 정보 입력
-
 # 개발 모드 실행
 $ npm run start:dev
 
