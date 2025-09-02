@@ -36,9 +36,7 @@ export class AiService {
 
       const content = response.output_text || '';
 
-      return {
-        content,
-      };
+      return new AIResponse(content);
     } catch (error) {
       this.logger.error('AI 서비스 오류:', error);
       throw error;

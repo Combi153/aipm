@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AiService } from '../ai/ai.service';
+import { WorkRequestIntentType } from './enums/work-request-intent.enum';
 import { RequirementsService } from './requirements.service';
 
 describe('RequirementsService', () => {
@@ -25,7 +26,7 @@ describe('RequirementsService', () => {
     aiService = module.get(AiService);
   });
 
-  describe('analyzeWorkRequest', () => {
+  describe('detectWorkRequest', () => {
     it('새로운 기능 개발 요청을 올바르게 분석해야 한다', async () => {
       // given
       const message = '우리 친구 추천하면 포인트 주는 기능 넣자!';
@@ -40,11 +41,11 @@ describe('RequirementsService', () => {
       aiService.sendMessage.mockResolvedValue(mockResponse);
 
       // when
-      const result = await service.analyzeWorkRequest(message);
+      const result = await service.detectWorkRequest(message);
 
       // then
       expect(result.isWorkRequest).toBe(true);
-      expect(result.intentType).toBe('feature_request');
+      expect(result.intentType).toBe(WorkRequestIntentType.FEATURE_REQUEST);
       expect(aiService.sendMessage).toHaveBeenCalledWith(
         message,
         expect.objectContaining({
@@ -69,11 +70,11 @@ describe('RequirementsService', () => {
       aiService.sendMessage.mockResolvedValue(mockResponse);
 
       // when
-      const result = await service.analyzeWorkRequest(message);
+      const result = await service.detectWorkRequest(message);
 
       // then
       expect(result.isWorkRequest).toBe(true);
-      expect(result.intentType).toBe('bug_report');
+      expect(result.intentType).toBe(WorkRequestIntentType.BUG_REPORT);
     });
 
     it('일반적인 질문을 올바르게 분석해야 한다', async () => {
@@ -90,11 +91,32 @@ describe('RequirementsService', () => {
       aiService.sendMessage.mockResolvedValue(mockResponse);
 
       // when
-      const result = await service.analyzeWorkRequest(message);
+      const result = await service.detectWorkRequest(message);
 
       // then
       expect(result.isWorkRequest).toBe(false);
-      expect(result.intentType).toBe('general_inquiry');
+      expect(result.intentType).toBe(WorkRequestIntentType.GENERAL_INQUIRY);
+    });
+
+    it('잘못된 intentType이 들어와도 OTHER로 처리해야 한다', async () => {
+      // given
+      const message = '테스트 메시지';
+      const mockResponse = {
+        content: JSON.stringify({
+          isWorkRequest: true,
+          intentType: 'invalid_type',
+        }),
+        model: 'gpt-4o',
+      };
+
+      aiService.sendMessage.mockResolvedValue(mockResponse);
+
+      // when
+      const result = await service.detectWorkRequest(message);
+
+      // then
+      expect(result.isWorkRequest).toBe(true);
+      expect(result.intentType).toBe(WorkRequestIntentType.OTHER);
     });
   });
 });
