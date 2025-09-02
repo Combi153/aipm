@@ -8,8 +8,8 @@ import { ConfigService } from '@nestjs/config';
 
 import { App } from '@slack/bolt';
 import { WebClient } from '@slack/web-api';
-import { AiService } from '../ai/ai.service';
 import { getRequiredEnv } from '../common/utils/env.util';
+import { RequirementsService } from '../requirements/requirements.service';
 import { SlackMessage } from './slack.types';
 
 @Injectable()
@@ -21,7 +21,7 @@ export class SlackService implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     private configService: ConfigService,
-    private aiService: AiService,
+    private requirementsService: RequirementsService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -80,25 +80,23 @@ export class SlackService implements OnModuleInit, OnModuleDestroy {
         this.logger.log('====================');
 
         try {
-          const aiResponse = await this.aiService.sendMessage(
+          const detectResult = await this.requirementsService.detectWorkRequest(
             slackMessage.text,
-            {
-              systemPrompt:
-                '당신은 도움이 되는 AI 어시스턴트입니다. 사용자의 메시지에 친근하고 도움이 되는 답변을 해주세요.',
-              userInfo: {
-                userId: slackMessage.user,
-              },
-            },
           );
 
-          await say({
-            text: aiResponse.output_text,
-            thread_ts: slackMessage.ts,
-          });
+          if (detectResult.isWorkRequest) {
+            this.logger.log('업무 요청으로 감지됨');
+            this.logger.log(`의도 타입: ${detectResult.intentType}`);
+
+            await say({
+              text: `업무 요청이 감지되었습니다! (${detectResult.intentType})`,
+              thread_ts: slackMessage.ts,
+            });
+          }
         } catch (aiError) {
-          this.logger.error('AI 서비스 오류:', aiError);
+          this.logger.error('요구사항 분석 서비스 오류:', aiError);
           await say({
-            text: '죄송합니다. AI 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
+            text: '죄송합니다. 요구사항 분석 서비스에 일시적인 문제가 발생했습니다.',
             thread_ts: slackMessage.ts,
           });
         }

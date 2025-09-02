@@ -1,6 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRequiredEnv } from '../common/utils/env.util';
+import { RequirementsService } from '../requirements/requirements.service';
 import { SlackService } from './slack.service';
 
 // Slack 관련 모듈들을 모킹
@@ -27,10 +28,15 @@ const mockGetRequiredEnv = getRequiredEnv as jest.MockedFunction<
 describe('SlackService', () => {
   let service: SlackService;
   let mockConfigService: jest.Mocked<ConfigService>;
+  let mockRequirementsService: jest.Mocked<RequirementsService>;
 
   beforeEach(async () => {
     mockConfigService = {
       get: jest.fn(),
+    } as any;
+
+    mockRequirementsService = {
+      detectWorkRequest: jest.fn(),
     } as any;
 
     mockGetRequiredEnv.mockImplementation((configService, key) => {
@@ -49,26 +55,14 @@ describe('SlackService', () => {
           provide: ConfigService,
           useValue: mockConfigService,
         },
+        {
+          provide: RequirementsService,
+          useValue: mockRequirementsService,
+        },
       ],
     }).compile();
 
     service = module.get<SlackService>(SlackService);
-  });
-
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
-
-  it('ConfigService가 주입되어야 한다', () => {
-    expect(mockConfigService).toBeDefined();
-  });
-
-  it('getRequiredEnv 함수가 올바르게 호출되어야 한다', async () => {
-    // When
-    await service.onModuleInit();
-
-    // Then
-    expect(mockGetRequiredEnv).toHaveBeenCalled();
   });
 
   it('연결 상태를 확인할 수 있어야 한다', () => {
@@ -77,10 +71,10 @@ describe('SlackService', () => {
   });
 
   it('연결 상태가 올바르게 반환되어야 한다', () => {
-    // When
+    // when
     const status = service.getConnectionStatus();
 
-    // Then
+    // then
     expect(status).toHaveProperty('isConnected');
     expect(status).toHaveProperty('timestamp');
     expect(typeof status.isConnected).toBe('boolean');

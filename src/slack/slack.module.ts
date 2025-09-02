@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AiModule } from '../ai/ai.module';
+import { RequirementsModule } from '../requirements/requirements.module';
 import { SlackService } from './slack.service';
 
 @Module({
-  imports: [ConfigModule, AiModule],
+  imports: [ConfigModule, RequirementsModule],
   providers: [SlackService],
   exports: [SlackService],
 })
